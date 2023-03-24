@@ -50,11 +50,12 @@ module ActiveSupport
       # wish to use pool support.
       #
       def initialize(*addresses)
-        puts <<-EOS
-DEPRECATION: :dalli_store will be removed in Dalli 3.0.
-Please use Rails' official :mem_cache_store instead.
-https://guides.rubyonrails.org/caching_with_rails.html
-EOS
+        # puts <<-EOS
+        # DEPRECATION: :dalli_store will be removed in Dalli 3.0.
+        # Please use Rails' official :mem_cache_store instead.
+        # https://guides.rubyonrails.org/caching_with_rails.html
+        # EOS
+
         addresses = addresses.flatten
         options = addresses.extract_options!
         @options = options.dup
@@ -423,7 +424,7 @@ EOS
       module LocalCacheEntryUnwrapAndRaw # :nodoc:
         protected
           def read_entry(key, options)
-            retval = super(key, **options)
+            retval = super(key, options)
             if retval.is_a? ActiveSupport::Cache::Entry
               # Must have come from LocalStore, unwrap it
               if options[:raw]
