@@ -335,7 +335,7 @@ module ActiveSupport
       end
 
       # Delete an entry from the cache.
-      def delete_entry(key, options) # :nodoc:
+      def delete_entry(key, **options) # :nodoc:
         with { |c| c.delete(key) }
       rescue Dalli::DalliError => e
         log_dalli_error(e)
