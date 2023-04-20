@@ -101,16 +101,16 @@ module ActiveSupport
       # If a value is not found (or if the found value is nil and :cache_nils is false)
       # and a block is given, the block will be invoked and its return value
       # written to the cache and returned.
-      def fetch(name, options=nil)
+      def fetch(name, **options)
         options ||= {}
         options[:cache_nils] = true if @options[:cache_nils]
-        namespaced_name = namespaced_key(name, options)
+        namespaced_name = namespaced_key(name, **options)
         not_found = options[:cache_nils] ? Dalli::Server::NOT_FOUND : nil
         if block_given?
           entry = not_found
           unless options[:force]
             entry = instrument_with_log(:read, namespaced_name, options) do |payload|
-              read_entry(namespaced_name, options).tap do |result|
+              read_entry(namespaced_name, **options).tap do |result|
                 if payload
                   payload[:super_operation] = :fetch
                   payload[:hit] = not_found != result
@@ -123,68 +123,67 @@ module ActiveSupport
             result = instrument_with_log(:generate, namespaced_name, options) do |payload|
               yield(name)
             end
-            write(name, result, options)
+            write(name, result, **options)
             result
           else
             instrument_with_log(:fetch_hit, namespaced_name, options) { |payload| }
             entry
           end
         else
-          read(name, options)
+          read(name, **options)
         end
       end
 
-      def read(name, options=nil)
+      def read(name, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
 
         instrument_with_log(:read, name, options) do |payload|
-          entry = read_entry(name, options)
+          entry = read_entry(name, **options)
           payload[:hit] = !entry.nil? if payload
           entry
         end
       end
 
-      def write(name, value, options=nil)
+      def write(name, value, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
 
         instrument_with_log(:write, name, options) do |payload|
           with do |connection|
             options = options.merge(:connection => connection)
-            write_entry(name, value, options)
+            write_entry(name, value, **options)
           end
         end
       end
 
-      def exist?(name, options=nil)
+      def exist?(name, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
 
         log(:exist, name, options)
-        !read_entry(name, options).nil?
+        !read_entry(name, **options).nil?
       end
 
-      def delete(name, options=nil)
+      def delete(name, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
 
         instrument_with_log(:delete, name, options) do |payload|
-          delete_entry(name, options)
+          delete_entry(name, **options)
         end
       end
-      ruby2_keywords :delete
 
       # Reads multiple keys from the cache using a single call to the
       # servers for all keys. Keys must be Strings.
-      def read_multi(*names)
-        options  = names.extract_options!
-        mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, options)] = name; memo }
+      def read_multi(*names, **options)
+        # options  = names.extract_options!
+        mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, **options)] = name; memo }
         instrument_with_log(:read_multi, mapping.keys) do
           results = {}
           if local_cache
             mapping.each_key do |key|
-              if value = local_cache.read_entry(key, options)
+              if value = local_cache.read_entry(key, **options)
                 results[key] = value
               end
             end
@@ -197,7 +196,7 @@ module ActiveSupport
             # NB Backwards data compatibility, to be removed at some point
             value = (entry.is_a?(ActiveSupport::Cache::Entry) ? entry.value : entry)
             memo[mapping[inner]] = value
-            local_cache.write_entry(inner, value, options) if local_cache
+            local_cache.write_entry(inner, value, **options) if local_cache
             memo
           end
         end
@@ -207,9 +206,9 @@ module ActiveSupport
       # the cache with the given keys, then that data is returned. Otherwise,
       # the supplied block is called for each key for which there was no data,
       # and the result will be written to the cache and returned.
-      def fetch_multi(*names)
-        options = names.extract_options!
-        mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, options)] = name; memo }
+      def fetch_multi(*names, **options)
+        # options = names.extract_options!
+        mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, **options)] = name; memo }
 
         instrument_with_log(:fetch_multi, mapping.keys) do
           with do |connection|
@@ -222,7 +221,7 @@ module ActiveSupport
                   value = yield(name)
                   memo[name] = value
                   options = options.merge(:connection => connection)
-                  write_entry(expanded, value, options)
+                  write_entry(expanded, value, **options)
                 end
 
                 memo
@@ -237,9 +236,9 @@ module ActiveSupport
       # Calling it on a value not stored with :raw will fail.
       # :initial defaults to the amount passed in, as if the counter was initially zero.
       # memcached counters cannot hold negative values.
-      def increment(name, amount = 1, options=nil)
+      def increment(name, amount = 1, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
         initial = options.has_key?(:initial) ? options[:initial] : amount
         expires_in = options[:expires_in]
         instrument_with_log(:increment, name, :amount => amount) do
@@ -257,9 +256,9 @@ module ActiveSupport
       # Calling it on a value not stored with :raw will fail.
       # :initial defaults to zero, as if the counter was initially zero.
       # memcached counters cannot hold negative values.
-      def decrement(name, amount = 1, options=nil)
+      def decrement(name, amount = 1, **options)
         options ||= {}
-        name = namespaced_key(name, options)
+        name = namespaced_key(name, **options)
         initial = options.has_key?(:initial) ? options[:initial] : 0
         expires_in = options[:expires_in]
         instrument_with_log(:decrement, name, :amount => amount) do
@@ -274,7 +273,7 @@ module ActiveSupport
 
       # Clear the entire cache on all memcached servers. This method should
       # be used with care when using a shared cache.
-      def clear(options=nil)
+      def clear(**options)
         instrument_with_log(:clear, 'flushing all keys') do
           with { |c| c.flush_all }
         end
@@ -286,7 +285,7 @@ module ActiveSupport
       end
 
       # Clear any local cache
-      def cleanup(options=nil)
+      def cleanup(**options)
       end
 
       # Get the statistics from the memcached servers.
@@ -309,8 +308,8 @@ module ActiveSupport
       protected
 
       # Read an entry from the cache.
-      def read_entry(key, options) # :nodoc:
-        entry = with { |c| c.get(key, options) }
+      def read_entry(key, **options) # :nodoc:
+        entry = with { |c| c.get(key, **options) }
         # NB Backwards data compatibility, to be removed at some point
         entry.is_a?(ActiveSupport::Cache::Entry) ? entry.value : entry
       rescue Dalli::DalliError => e
@@ -321,13 +320,13 @@ module ActiveSupport
       end
 
       # Write an entry to the cache.
-      def write_entry(key, value, options) # :nodoc:
+      def write_entry(key, value, **options) # :nodoc:
         # cleanup LocalCache
         cleanup if options[:unless_exist]
         method = options[:unless_exist] ? :add : :set
         expires_in = options[:expires_in]
         connection = options.delete(:connection)
-        connection.send(method, key, value, expires_in, options)
+        connection.send(method, key, value, expires_in, **options)
       rescue Dalli::DalliError => e
         log_dalli_error(e)
         instrument_error(e) if instrument_errors?
@@ -347,7 +346,7 @@ module ActiveSupport
 
       private
 
-      def namespaced_key(key, options)
+      def namespaced_key(key, **options)
         digest_class = @options[:digest_class] || ::Digest::MD5
         key = expanded_key(key)
         namespace = options[:namespace] if options
@@ -356,7 +355,6 @@ module ActiveSupport
         key = "#{key[0, 213]}:md5:#{digest_class.hexdigest(key)}" if key && key.size > 250
         key
       end
-      ruby2_keywords :namespaced_key
       alias :normalize_key :namespaced_key
 
       # Expand key to be a consistent string value. Invokes +cache_key_with_version+
@@ -425,8 +423,8 @@ module ActiveSupport
       # respect `raw` option.
       module LocalCacheEntryUnwrapAndRaw # :nodoc:
         protected
-          def read_entry(key, options)
-            retval = super(key, options)
+          def read_entry(key, **options)
+            retval = super(key, **options)
             if retval.is_a? ActiveSupport::Cache::Entry
               # Must have come from LocalStore, unwrap it
               if options[:raw]
