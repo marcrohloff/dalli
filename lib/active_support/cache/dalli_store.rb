@@ -355,9 +355,10 @@ module ActiveSupport
         key = "#{key[0, 213]}:md5:#{digest_class.hexdigest(key)}" if key && key.size > 250
         key
       end
+      ruby2_keywords :namespaced_key
       alias :normalize_key :namespaced_key
 
-      # Expand key to be a consistent string value. Invokes +cache_key_with_version+
+    # Expand key to be a consistent string value. Invokes +cache_key_with_version+
       # first to support Rails 5.2 cache versioning.
       # Invoke +cache_key+ if object responds to +cache_key+. Otherwise, to_param method
       # will be called. If the key is a Hash, then keys will be sorted alphabetically.
