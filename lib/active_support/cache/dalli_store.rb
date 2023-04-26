@@ -181,8 +181,8 @@ module ActiveSupport
 
       # Reads multiple keys from the cache using a single call to the
       # servers for all keys. Keys must be Strings.
-      def read_multi(*names, options = {})
-        # options  = names.extract_options!
+      def read_multi(*names)
+        options  = names.extract_options!
         mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, options)] = name; memo }
         instrument_with_log(:read_multi, mapping.keys) do
           results = {}
@@ -206,14 +206,13 @@ module ActiveSupport
           end
         end
       end
-      ruby2_keywords :read_multi
 
       # Fetches data from the cache, using the given keys. If there is data in
       # the cache with the given keys, then that data is returned. Otherwise,
       # the supplied block is called for each key for which there was no data,
       # and the result will be written to the cache and returned.
-      def fetch_multi(*names, options = {})
-        # options = names.extract_options!
+      def fetch_multi(*names)
+        options = names.extract_options!
         mapping = names.inject({}) { |memo, name| memo[namespaced_key(name, options)] = name; memo }
 
         instrument_with_log(:fetch_multi, mapping.keys) do
@@ -236,7 +235,6 @@ module ActiveSupport
           end
         end
       end
-      ruby2_keywords :fetch_multi
 
       # Increment a cached value. This method uses the memcached incr atomic
       # operator and can only be used on values written with the :raw option.
