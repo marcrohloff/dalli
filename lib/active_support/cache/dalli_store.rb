@@ -133,7 +133,6 @@ module ActiveSupport
           read(name, options)
         end
       end
-      ruby2_keywords :fetch
 
       def read(name, options = {})
         options ||= {}
@@ -145,7 +144,6 @@ module ActiveSupport
           entry
         end
       end
-      ruby2_keywords :read
 
       def write(name, value, options = {})
         options ||= {}
@@ -158,7 +156,6 @@ module ActiveSupport
           end
         end
       end
-      ruby2_keywords :write
 
       def exist?(name, options = {})
         options ||= {}
@@ -167,7 +164,6 @@ module ActiveSupport
         log(:exist, name, options)
         !read_entry(name, options).nil?
       end
-      ruby2_keywords :exist?
 
       def delete(name, options = {})
         options ||= {}
@@ -177,7 +173,6 @@ module ActiveSupport
           delete_entry(name, options)
         end
       end
-      ruby2_keywords :delete
 
       # Reads multiple keys from the cache using a single call to the
       # servers for all keys. Keys must be Strings.
@@ -255,7 +250,6 @@ module ActiveSupport
         raise if raise_errors?
         nil
       end
-      ruby2_keywords :increment
 
       # Decrement a cached value. This method uses the memcached decr atomic
       # operator and can only be used on values written with the :raw option.
@@ -276,7 +270,6 @@ module ActiveSupport
         raise if raise_errors?
         nil
       end
-      ruby2_keywords :decrement
 
       # Clear the entire cache on all memcached servers. This method should
       # be used with care when using a shared cache.
@@ -290,12 +283,10 @@ module ActiveSupport
         raise if raise_errors?
         nil
       end
-      ruby2_keywords :clear
 
       # Clear any local cache
       def cleanup(options = {})
       end
-      ruby2_keywords :cleanup
 
       # Get the statistics from the memcached servers.
       def stats
@@ -327,7 +318,6 @@ module ActiveSupport
         raise if raise_errors?
         nil
       end
-      ruby2_keywords :read_entry
 
       # Write an entry to the cache.
       def write_entry(key, value, options = {}) # :nodoc:
@@ -343,7 +333,6 @@ module ActiveSupport
         raise if raise_errors?
         false
       end
-      ruby2_keywords :write_entry 
 
       # Delete an entry from the cache.
       def delete_entry(key, options = {}) # :nodoc:
@@ -354,7 +343,6 @@ module ActiveSupport
         raise if raise_errors?
         false
       end
-      ruby2_keywords :delete_entry 
 
       private
 
@@ -368,8 +356,6 @@ module ActiveSupport
         key
       end
       alias :normalize_key :namespaced_key
-      ruby2_keywords :namespaced_key
-      ruby2_keywords :normalize_key
 
       # Expand key to be a consistent string value. Invokes +cache_key_with_version+
       # first to support Rails 5.2 cache versioning.
@@ -450,7 +436,6 @@ module ActiveSupport
               retval
             end
           end
-          ruby2_keywords :read_entry
       end
     end
   end
