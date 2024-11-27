@@ -101,7 +101,7 @@ module ActiveSupport
       # If a value is not found (or if the found value is nil and :cache_nils is false)
       # and a block is given, the block will be invoked and its return value
       # written to the cache and returned.
-      def fetch(name, **options)
+      def fetch(name, options = nil)
         options[:cache_nils] = true if @options[:cache_nils]
         namespaced_name = namespaced_key(name, **options)
         not_found = options[:cache_nils] ? Dalli::Server::NOT_FOUND : nil
@@ -122,18 +122,18 @@ module ActiveSupport
             result = instrument_with_log(:generate, namespaced_name, options) do |payload|
               yield(name)
             end
-            write(name, result, **options)
+            write(name, result, options)
             result
           else
             instrument_with_log(:fetch_hit, namespaced_name, options) { |payload| }
             entry
           end
         else
-          read(name, **options)
+          read(name, options)
         end
       end
 
-      def read(name, **options)
+      def read(name, options = nil)
         name = namespaced_key(name, **options)
 
         instrument_with_log(:read, name, options) do |payload|
@@ -143,7 +143,7 @@ module ActiveSupport
         end
       end
 
-      def write(name, value, **options)
+      def write(name, value, options = nil)
         name = namespaced_key(name, **options)
 
         instrument_with_log(:write, name, options) do |payload|
@@ -154,14 +154,14 @@ module ActiveSupport
         end
       end
 
-      def exist?(name, **options)
+      def exist?(name, options = nil)
         name = namespaced_key(name, **options)
 
         log(:exist, name, options)
         !read_entry(name, **options).nil?
       end
 
-      def delete(name, **options)
+      def delete(name, options = nil)
         name = namespaced_key(name, **options)
 
         instrument_with_log(:delete, name, options) do |payload|
@@ -231,7 +231,7 @@ module ActiveSupport
       # Calling it on a value not stored with :raw will fail.
       # :initial defaults to the amount passed in, as if the counter was initially zero.
       # memcached counters cannot hold negative values.
-      def increment(name, amount = 1, **options)
+      def increment(name, amount = 1, options = nil)
         name = namespaced_key(name, **options)
         initial = options.has_key?(:initial) ? options[:initial] : amount
         expires_in = options[:expires_in]
@@ -250,7 +250,7 @@ module ActiveSupport
       # Calling it on a value not stored with :raw will fail.
       # :initial defaults to zero, as if the counter was initially zero.
       # memcached counters cannot hold negative values.
-      def decrement(name, amount = 1, **options)
+      def decrement(name, amount = 1, options = nil)
         name = namespaced_key(name, **options)
         initial = options.has_key?(:initial) ? options[:initial] : 0
         expires_in = options[:expires_in]
@@ -266,7 +266,7 @@ module ActiveSupport
 
       # Clear the entire cache on all memcached servers. This method should
       # be used with care when using a shared cache.
-      def clear(**options)
+      def clear(options = nil)
         instrument_with_log(:clear, 'flushing all keys') do
           with { |c| c.flush_all }
         end
@@ -278,7 +278,7 @@ module ActiveSupport
       end
 
       # Clear any local cache
-      def cleanup(**options)
+      def cleanup(options = nil)
       end
 
       # Get the statistics from the memcached servers.
